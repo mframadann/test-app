@@ -6,6 +6,7 @@ use App\Filament\Resources\GreenHouseResource\Pages;
 use App\Filament\Resources\GreenHouseResource\RelationManagers;
 use App\Http\Livewire\ReminderBadge;
 use App\Models\GreenHouse;
+use Carbon\CarbonInterval;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class GreenHouseResource extends Resource
 {
@@ -68,28 +70,36 @@ class GreenHouseResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->formatStateUsing(function (GreenHouse $record) {
-                        Carbon::setLocale('id');
-                        $formattedDate = Carbon::parse($record->deadline_for_slaughterhouse_entry)->format('l, d F Y H:i:s');
+                        $deadline = Carbon::parse($record->deadline_for_slaughterhouse_entry);
+                        $formattedDate = $deadline->isoFormat('dddd, D MMMM YYYY HH:mm:ss');
+                        $now = Carbon::now();
 
-                        $start = Carbon::parse($record->spk_creation_date);
-                        $end = Carbon::parse($record->deadline_for_slaughterhouse_entry);
-                        $hoursLeft = $start->diffInHours($end, false);
 
-                        if ($hoursLeft <= 0) {
+                        if ($deadline->isPast() && !$record->is_done) {
                             return "Expired pada {$formattedDate}";
                         }
 
-                        return "{$formattedDate} - " . $start->diffForHumans($end, true) . ' lagi';
+                        if ($record->is_done) {
+                            return "Selesai pada {$formattedDate}";
+                        }
+
+                        $timeLeftHumanReadable = $deadline->diffForHumans($now, true);
+                        return "{$formattedDate} - {$timeLeftHumanReadable} lagi";
                     })
                     ->badge()
                     ->color(function (GreenHouse $record) {
-                        Carbon::setLocale('id');
+                        $start = Carbon::parse($record->deadline_for_slaughterhouse_entry);
+                        $end = Carbon::now();
 
-                        $start = Carbon::parse($record->spk_creation_date);
-                        $end = Carbon::parse($record->deadline_for_slaughterhouse_entry);
+                        if ($start->isPast() && !$record->is_done) {
+                            return 'danger';
+                        }
+
+                        if ($record->is_done) {
+                            return "success";
+                        }
+
                         $hoursLeft = $start->diffInHours($end, false);
-
-
                         if ($hoursLeft > 5) {
                             return 'success';
                         } elseif ($hoursLeft > 3) {
@@ -97,7 +107,7 @@ class GreenHouseResource extends Resource
                         } elseif ($hoursLeft > 0) {
                             return 'danger';
                         } else {
-                            return 'danger';
+                            return 'expired';
                         }
                     })
                     ->sortable(),
@@ -115,10 +125,29 @@ class GreenHouseResource extends Resource
                     ->label('Tanggal Masuk Rumah Potong')
                     ->dateTime('l, d F Y H:i:s')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->placeholder("--"),
                 Tables\Columns\TextColumn::make('required_duration')
                     ->label('Berapa lama waktu yg di perlukan')
-                    ->formatStateUsing(fn($state) => $state ? $state  : 'Belum tersedia'),
+                    ->formatStateUsing(function ($state) {
+                        list($hours, $minutes, $seconds) = explode(':', $state);
+
+                        $formattedDuration = [];
+
+                        if ($hours > 0) {
+                            $formattedDuration[] = "$hours jam";
+                        }
+
+                        if ($minutes > 0) {
+                            $formattedDuration[] = "$minutes menit";
+                        }
+
+                        if ($seconds > 0) {
+                            $formattedDuration[] = "$seconds detik";
+                        }
+
+                        return implode(' ', $formattedDuration) ?: '0 detik';
+                    })->placeholder("--"),
             ])
             ->filters([
                 //

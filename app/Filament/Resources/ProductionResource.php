@@ -14,6 +14,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class ProductionResource extends Resource
 {
@@ -59,26 +60,29 @@ class ProductionResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->formatStateUsing(function ($record) {
-                        Carbon::setLocale('id');
-                        $formattedDate = Carbon::parse($record->deadline_for_returning_printing)->format('l, d F Y H:i:s');
+                        $deadline = Carbon::parse($record->deadline_for_returning_printing);
+                        $formattedDate = $deadline->isoFormat('dddd, D MMMM YYYY HH:mm:ss');
+                        $now = Carbon::now();
 
-                        $start = Carbon::parse($record->printing_date);
-                        $end = Carbon::parse($record->deadline_for_returning_printing);
-                        $hoursLeft = $start->diffInHours($end, false);
 
-                        if ($hoursLeft <= 0) {
+                        if ($deadline->isPast()) {
                             return "Expired pada {$formattedDate}";
                         }
 
-                        return "{$formattedDate} - " . $start->diffForHumans($end, true) . ' lagi';
+
+                        $timeLeftHumanReadable = $deadline->diffForHumans($now, true);
+                        return "{$formattedDate} - {$timeLeftHumanReadable} lagi";
                     })
                     ->badge()
                     ->color(function ($record) {
-                        Carbon::setLocale('id');
+                        $start = Carbon::parse($record->deadline_for_returning_printing);
+                        $end = Carbon::now();
 
-                        $start = Carbon::parse($record->printing_date);
-                        $end = Carbon::parse($record->deadline_for_returning_printing);
-                        $hoursLeft = $start->diffInHours($end, false);
+                        if ($start->isPast()) {
+                            return 'danger';
+                        }
+
+                        $hoursLeft = $start->diffInHours($end, true);
 
                         if ($hoursLeft > 5) {
                             return 'success';
@@ -87,10 +91,9 @@ class ProductionResource extends Resource
                         } elseif ($hoursLeft > 0) {
                             return 'danger';
                         } else {
-                            return 'danger';
+                            return 'success';
                         }
-                    })
-                    ->sortable(),
+                    }),
 
                 TextColumn::make('cmt_pickup_date')
                     ->label('Tanggal & Jam Ambil CMT')
@@ -104,37 +107,38 @@ class ProductionResource extends Resource
                     ->sortable()
                     ->searchable()
                     ->formatStateUsing(function ($record) {
-                        Carbon::setLocale('id');
-                        $formattedCompletionDate = Carbon::parse($record->cmt_completion_date)->format('l, d F Y H:i:s');
-                        $formattedPickupDate = Carbon::parse($record->cmt_pickup_date)->format('l, d F Y H:i:s');
+                        $deadline = Carbon::parse($record->cmt_completion_date);
+                        $formattedDate = $deadline->isoFormat('dddd, D MMMM YYYY HH:mm:ss');
+                        $now = Carbon::now();
 
-                        if ($record->cmt_pickup_date && $record->cmt_completion_date) {
-                            $pickup = Carbon::parse($record->cmt_pickup_date);
-                            $completion = Carbon::parse($record->cmt_completion_date);
-                            $duration = $pickup->diffInHours($completion, false);
 
-                            return "{$formattedCompletionDate} - Durasi: {$duration} jam";
+                        if ($deadline->isPast()) {
+                            return "Expired pada {$formattedDate}";
                         }
 
-                        return "{$formattedCompletionDate} - Durasi: Belum tersedia";
+
+                        $timeLeftHumanReadable = $deadline->diffForHumans($now, true);
+                        return "{$formattedDate} - {$timeLeftHumanReadable} lagi";
                     })
                     ->badge()
                     ->color(function ($record) {
-                        if ($record->cmt_pickup_date && $record->cmt_completion_date) {
-                            $pickup = Carbon::parse($record->cmt_pickup_date);
-                            $completion = Carbon::parse($record->cmt_completion_date);
-                            $duration = $pickup->diffInHours($completion, false);
+                        $start = Carbon::parse($record->cmt_completion_date);
+                        $end = Carbon::now();
 
-                            if ($duration > 5) {
-                                return 'success';
-                            } elseif ($duration > 3) {
-                                return 'warning';
-                            } elseif ($duration > 0) {
-                                return 'danger';
-                            }
+                        if ($start->isPast()) {
+                            return 'danger';
                         }
 
-                        return 'danger'; // Default color jika tidak ada pickup date atau completion date
+                        $hoursLeft = $start->diffInHours($end, true);
+                        if ($hoursLeft > 5) {
+                            return 'success';
+                        } elseif ($hoursLeft > 3) {
+                            return 'warning';
+                        } elseif ($hoursLeft > 0) {
+                            return 'danger';
+                        } else {
+                            return 'expired';
+                        }
                     })
                     ->sortable(),
             ])

@@ -25,9 +25,19 @@ class SlaughterHouse extends Model
                 $start = Carbon::parse($record->entry_time_to_slaughterhouse);
                 $end = Carbon::parse($record->finish_time_of_slaughter);
 
-                $duration = $start->diffInHours($end, false);
+                $durationInSeconds = $start->diffInSeconds($end);
 
-                $record->duration_of_slaughter = $duration;
+                if ($durationInSeconds < 0) {
+                    $durationInSeconds = 0;
+                }
+
+                $hours = floor($durationInSeconds / 3600);
+                $minutes = floor(($durationInSeconds % 3600) / 60);
+                $seconds = $durationInSeconds % 60;
+
+                $formattedDuration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+                $record->duration_of_slaughter = $formattedDuration;
             }
         });
     }

@@ -28,13 +28,23 @@ class GreenHouse extends Model
         parent::boot();
 
         static::updating(function ($record) {
-            if ($record->deadline_for_slaughterhouse_entry && $record->entry_time_to_slaughterhouse) {
-                $start = Carbon::parse($record->deadline_for_slaughterhouse_entry);
-                $end = Carbon::parse($record->entry_time_to_slaughterhouse);
+            if ($record->spk_creation_date) {
+                $start = Carbon::parse($record->spk_creation_date);
+                $end = Carbon::now();
 
-                $duration = $start->diffInHours($end, false);
+                $durationInSeconds = $start->diffInSeconds($end);
 
-                $record->required_duration = $duration;
+                if ($durationInSeconds < 0) {
+                    $durationInSeconds = 0;
+                }
+
+                $hours = floor($durationInSeconds / 3600);
+                $minutes = floor(($durationInSeconds % 3600) / 60);
+                $seconds = $durationInSeconds % 60;
+
+                $formattedDuration = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+                $record->required_duration = $formattedDuration;
             }
         });
     }

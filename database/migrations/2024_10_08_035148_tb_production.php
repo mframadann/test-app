@@ -15,10 +15,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->date('printing_date');
-            $table->date('deadline_for_returning_printing');
-            $table->date('cmt_pickup_date');
-            $table->date('cmt_completion_date');
+            $table->datetime('printing_date');
+            $table->datetime('deadline_for_returning_printing');
+            $table->datetime('cmt_pickup_date');
+            $table->datetime('cmt_completion_date');
         });
     }
 

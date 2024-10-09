@@ -19,7 +19,7 @@ return new class extends Migration
             $table->dateTime('deadline_for_slaughterhouse_entry');
             $table->boolean("is_done")->default(false);
             $table->dateTime('entry_time_to_slaughterhouse')->nullable();
-            $table->time('required_duration')->nullable();
+            $table->string('required_duration', 30)->nullable();
         });
     }
 

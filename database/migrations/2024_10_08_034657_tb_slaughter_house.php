@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->dateTime('entry_time_to_slaughterhouse')->nullable();
             $table->dateTime('finish_time_of_slaughter')->nullable();
-            $table->time('duration_of_slaughter')->nullable();
+            $table->datetime('duration_of_slaughter', 30)->nullable();
         });
     }
 

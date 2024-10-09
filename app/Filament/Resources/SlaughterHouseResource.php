@@ -47,10 +47,30 @@ class SlaughterHouseResource extends Resource
                     ->dateTime('l, d F Y H:i:s'),
                 Tables\Columns\TextColumn::make('finish_time_of_slaughter')
                     ->label('Tanggal & Jam Selesai')
-                    ->dateTime('l, d F Y H:i:s'),
+                    ->dateTime('l, d F Y H:i:s')
+                    ->placeholder("--"),
                 Tables\Columns\TextColumn::make('duration_of_slaughter')
-                    ->label('Durasi Pemotongan (Jam)')
-                    ->formatStateUsing(fn($state) => $state ? $state  : 'Belum tersedia'),
+                    ->label('Durasi Pemotongan')
+                    ->placeholder("--")
+                    ->formatStateUsing(function ($state) {
+                        list($hours, $minutes, $seconds) = explode(':', $state);
+
+                        $formattedDuration = [];
+
+                        if ($hours > 0) {
+                            $formattedDuration[] = "$hours jam";
+                        }
+
+                        if ($minutes > 0) {
+                            $formattedDuration[] = "$minutes menit";
+                        }
+
+                        if ($seconds > 0) {
+                            $formattedDuration[] = "$seconds detik";
+                        }
+
+                        return implode(' ', $formattedDuration) ?: '0 detik';
+                    }),
                 Tables\Columns\TextColumn::make('product.name')
                     ->label('Nama Produk'),
             ])
