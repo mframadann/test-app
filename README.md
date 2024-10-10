@@ -39,7 +39,7 @@ composer --version
 
 ## Installation
 
-Clone the repo and download locally:
+Clone the repo or download locally:
 
 ```sh
 git clone https://github.com/mframadann/test-app.git && cd test-app
