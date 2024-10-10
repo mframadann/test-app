@@ -42,7 +42,7 @@ composer --version
 Clone the repo and download locally:
 
 ```sh
-git clone https://github.com/meowdevv/meow-inventory.git meow-inventory && cd meow-inventory
+git clone https://github.com/mframadann/test-app.git && cd test-app
 ```
 
 Install PHP dependencies:
